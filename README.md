@@ -1,3 +1,13 @@
+# Task 2
+
+## CloudFront URL
+
+https://dhjsw4st8wxc9.cloudfront.net/
+
+## S3 URL -- 403
+
+http://ezhukauskas-aws-learn-store-sls.s3-website-eu-west-1.amazonaws.com/index.html
+
 # React-shop-cloudfront
 
 This is frontend starter project for nodejs-aws mentoring program. It uses the following technologies:

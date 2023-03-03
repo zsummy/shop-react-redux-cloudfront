@@ -1,16 +1,15 @@
-service: my-store-app
+service: store-web-app
 
 frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: nodejs16.x
+  runtime: nodejs18.x
   region: eu-west-1
   # setup profile for AWS CLI.
   # profile: node-aws
 
 plugins:
-  - serverless-finch
   # 'serverless-single-page-app-plugin' is a custom plugin that located .serverless_plugins folder.
   # Existing plugin (https://www.npmjs.com/package/serverless-single-page-app-plugin) doesn't have invalidate cache feature that often used during CI/CD events.
   # How to build your own plugins: https://www.serverless.com/framework/docs/providers/aws/guide/plugins#service-local-plugin
@@ -18,17 +17,14 @@ plugins:
   - serverless-s3-cleaner
 
 custom:
+  s3Bucket: ez-store-web-app
+  distributionOriginId: shopWebAppS3Origin
   client:
-    bucketName: ezhukauskas-aws-learn-store-sls
     distributionFolder: dist
-    distributionOriginId: myS3Origin
-  s3BucketName: ${self:custom.client.bucketName}
 
-  ## Serverless-single-page-app-plugin configuration:
-  s3LocalPath: ${self:custom.client.distributionFolder}/
   serverless-s3-cleaner:
     buckets:
-      - ${self:custom.client.bucketName}
+      - ${self:custom.s3Bucket}
 
 resources:
   Resources:
@@ -36,7 +32,7 @@ resources:
     WebAppS3Bucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:custom.s3BucketName}
+        BucketName: ${self:custom.s3Bucket}
         AccessControl: PublicRead
         WebsiteConfiguration:
           IndexDocument: index.html
@@ -55,7 +51,7 @@ resources:
             - Sid: "AllowUiCloudFrontAccessIdentity"
               Effect: Allow
               Action: s3:GetObject
-              Resource: arn:aws:s3:::${self:custom.s3BucketName}/*
+              Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
               Principal:
                 AWS:
                   Fn::Join:
@@ -77,7 +73,7 @@ resources:
           Origins:
             - DomainName: !GetAtt WebAppS3Bucket.RegionalDomainName
               ## An identifier for the origin which must be unique within the distribution
-              Id: ${self:custom.client.distributionOriginId}
+              Id: ${self:custom.distributionOriginId}
               ## In case you don't want to restrict the bucket access use CustomOriginConfig and remove S3OriginConfig
               S3OriginConfig:
                 OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${OriginAccessIdentity}
@@ -112,7 +108,7 @@ resources:
               Cookies:
                 Forward: none
             ## The origin id defined above
-            TargetOriginId: ${self:custom.client.distributionOriginId}
+            TargetOriginId: ${self:custom.distributionOriginId}
             ## The protocol that users can use to access the files in the origin. To allow HTTP use `allow-all`
             ViewerProtocolPolicy: redirect-to-https
             Compress: true
